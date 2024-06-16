@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
 )
 
 type Course struct {
@@ -72,58 +71,6 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
-func HandleSearch(w http.ResponseWriter, r *http.Request) {
-	courseName := r.URL.Query().Get("course_name")
-	if courseName == "" {
-		http.Error(w, "course_name is required", http.StatusBadRequest)
-		return
-	}
-
-	courses := getCourses()
-	var foundCourse *Course
-	for _, course := range courses {
-		if course.Name == courseName {
-			foundCourse = &course
-			break
-		}
-	}
-
-	if foundCourse == nil {
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"course":      nil,
-			"enrollments": []Enrollment{},
-		})
-		return
-	}
-
-	enrollments := getEnrollments(foundCourse.ID)
-
-	var wg sync.WaitGroup
-	enrollmentDetails := make([]map[string]interface{}, len(enrollments))
-	for i, enrollment := range enrollments {
-		wg.Add(1)
-		go func(i int, enrollment Enrollment) {
-			defer wg.Done()
-			user := getUserDetails(enrollment.UserID)
-			enrollmentDetails[i] = map[string]interface{}{
-				"user_id":          enrollment.UserID,
-				"enrolled_at":      enrollment.EnrolledAt,
-				"completed_at":     enrollment.CompletedAt,
-				"percent_complete": enrollment.PercentComplete,
-				"expires_at":       enrollment.ExpiresAt,
-				"user_name":        user.Name,
-				"user_email":       user.Email,
-			}
-		}(i, enrollment)
-	}
-	wg.Wait()
-
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"course":      foundCourse,
-		"enrollments": enrollmentDetails,
-	})
-}
-
 func getCourses() []Course {
 	apiKey := os.Getenv("API_KEY")
 	client := &http.Client{}
@@ -156,6 +103,55 @@ func getCourses() []Course {
 	}
 
 	return coursesResponse.Courses
+}
+
+func HandleSearch(w http.ResponseWriter, r *http.Request) {
+	courseName := r.URL.Query().Get("course_name")
+
+	var courses []Course
+	if courseName == "" {
+		courses = getCourses()
+	} else {
+		courses = []Course{}
+		foundCourse := findCourseByName(courseName)
+		if foundCourse != nil {
+			courses = append(courses, *foundCourse)
+		}
+	}
+
+	enrollmentDetails := make([]map[string]interface{}, 0)
+	for _, course := range courses {
+		enrollments := getEnrollments(course.ID)
+		courseEnrollments := make([]map[string]interface{}, 0)
+		for _, enrollment := range enrollments {
+			user := getUserDetails(enrollment.UserID)
+			courseEnrollments = append(courseEnrollments, map[string]interface{}{
+				"user_id":          enrollment.UserID,
+				"enrolled_at":      enrollment.EnrolledAt,
+				"completed_at":     enrollment.CompletedAt,
+				"percent_complete": enrollment.PercentComplete,
+				"expires_at":       enrollment.ExpiresAt,
+				"user_name":        user.Name,
+				"user_email":       user.Email,
+			})
+		}
+		enrollmentDetails = append(enrollmentDetails, map[string]interface{}{
+			"course":      course,
+			"enrollments": courseEnrollments,
+		})
+	}
+
+	json.NewEncoder(w).Encode(enrollmentDetails)
+}
+
+func findCourseByName(courseName string) *Course {
+	courses := getCourses()
+	for _, course := range courses {
+		if course.Name == courseName {
+			return &course
+		}
+	}
+	return nil
 }
 
 func getEnrollments(courseID int) []Enrollment {
