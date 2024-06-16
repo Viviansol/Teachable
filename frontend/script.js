@@ -14,8 +14,6 @@ document.getElementById('searchForm').addEventListener('submit', function(event)
                 alert('Course not found');
                 return;
             }
-
-            // Update course details table
             const courseTableBody = document.getElementById('courseTable').querySelector('tbody');
             courseTableBody.innerHTML = `
                 <tr>
@@ -27,7 +25,6 @@ document.getElementById('searchForm').addEventListener('submit', function(event)
                 </tr>
             `;
 
-            // Update enrolled students table
             const studentsTableBody = document.getElementById('studentsTable').querySelector('tbody');
             studentsTableBody.innerHTML = '';
             data.enrollments.forEach(enrollment => {
