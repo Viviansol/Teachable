@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Course Search</title>
+    <link rel="stylesheet" type="text/css" href="/frontend/styles.css">
+</head>
+<body>
+<div class="form-container">
+    <h1>Search for a Course</h1>
+    <form id="searchForm">
+        <label for="courseName">Course Name:</label>
+        <input type="text" id="courseName" name="courseName">
+        <button type="submit">Search</button>
+    </form>
+    <div id="results">
+        <h2>Course Details</h2>
+        <table id="courseTable">
+            <thead>
+            <tr>
+                <th>Course ID</th>
+                <th>Course Name</th>
+                <th>Course Heading</th>
+                <th>Is Published</th>
+                <th>Image</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Results will be inserted here -->
+            </tbody>
+        </table>
+        <h2>Enrolled Students</h2>
+        <table id="studentsTable">
+            <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Enrolled At</th>
+                <th>Percent Complete</th>
+                <th>User Name</th>
+                <th>User Email</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Results will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+<script src="/frontend/script.js"></script>
+</body>
+</html>
